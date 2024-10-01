@@ -6,6 +6,7 @@
     graylog_password_secret: "{{ lookup('password', '/dev/null length=96') }}"
     graylog_root_password_sha2: "{{ 'password' | password_hash('sha512') }}"
     elasticsearch_version: "7.x"
+    IP_DU_SERVEUR_CENTRAL: "{{ ansible_default_ipv4.address }}"
 
   tasks:
     - name: Ensure prerequisites are installed
@@ -88,10 +89,10 @@
       with_items:
         - "password_secret = {{ graylog_password_secret }}"
         - "root_password_sha2 = {{ graylog_root_password_sha2 }}"
-        - "http_bind_address = 0.0.0.0:9000"
+        - "http_bind_address = {{ IP_DU_SERVEUR_CENTRAL }}:9000"
       notify:
         - Restart Graylog
-    
+
     - name: Install Kibana
       apt:
         name: kibana
@@ -101,7 +102,7 @@
 
     - name: Create Graylog UDP input
       uri:
-        url: "http://localhost:9000/api/system/inputs"
+        url: "http://{{ IP_DU_SERVEUR_CENTRAL }}:9000/api/system/inputs"
         method: POST
         user: admin
         password: "{{ graylog_password }}"
