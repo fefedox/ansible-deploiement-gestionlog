@@ -1,6 +1,6 @@
 ---
 - name: Deploy a complete log management stack (central server)
-  hosts: all
+  hosts: localhost
   become: yes
   vars:
     graylog_password_secret: "{{ lookup('password', '/dev/null length=96') }}"
