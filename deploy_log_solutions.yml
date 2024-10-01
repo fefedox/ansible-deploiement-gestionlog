@@ -21,6 +21,16 @@
         - ca-certificates
         - curl
 
+    - name: Add Fluentd GPG Key and Repository
+      apt_key:
+        url: https://packages.treasuredata.com/GPG-KEY-td-agent
+        state: present
+
+    - name: Add Fluentd repository
+      apt_repository:
+        repo: "deb https://packages.treasuredata.com/3/ubuntu/focal/ focal contrib"
+        state: present
+
     - name: Ensure Rsyslog is installed and started
       apt:
         name: rsyslog
