@@ -8,11 +8,11 @@
     elasticsearch_version: "7.x"
 
   tasks:
-
     - name: Ensure prerequisites are installed
       apt:
         name: "{{ item }}"
         state: present
+        update_cache: yes
       loop:
         - apt-transport-https
         - openjdk-11-jre
@@ -20,39 +20,25 @@
         - ca-certificates
         - curl
 
-    # ----------- Rsyslog Installation and Configuration ----------
-    - name: Ensure Rsyslog is installed
+    - name: Ensure Rsyslog is installed and started
       apt:
         name: rsyslog
         state: present
-        update_cache: yes
+      notify:
+        - Start Rsyslog
 
-    - name: Ensure Rsyslog is enabled and started
-      systemd:
-        name: rsyslog
-        enabled: yes
-        state: started
-
-    # ----------- Logrotate Installation ----------
     - name: Ensure Logrotate is installed
       apt:
         name: logrotate
         state: present
 
-    # ----------- Fluentd Installation ----------
     - name: Install Fluentd (td-agent)
       apt:
         name: td-agent
         state: present
-        update_cache: yes
+      notify:
+        - Start Fluentd
 
-    - name: Ensure Fluentd is enabled and started
-      systemd:
-        name: td-agent
-        enabled: yes
-        state: started
-
-    # ----------- Elasticsearch Installation ----------
     - name: Install Elasticsearch GPG Key
       apt_key:
         url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
@@ -68,15 +54,9 @@
       apt:
         name: elasticsearch
         state: present
-        update_cache: yes
+      notify:
+        - Start Elasticsearch
 
-    - name: Ensure Elasticsearch is enabled and started
-      systemd:
-        name: elasticsearch
-        enabled: yes
-        state: started
-
-    # ----------- Graylog Installation ----------
     - name: Install Graylog repository
       apt_repository:
         repo: 'deb https://packages.graylog2.org/repo/packages/graylog/4.x/ubuntu/ stable main'
@@ -86,7 +66,6 @@
       apt:
         name: graylog-server
         state: present
-        update_cache: yes
 
     - name: Configure Graylog Server
       lineinfile:
@@ -97,21 +76,43 @@
         - "password_secret = {{ graylog_password_secret }}"
         - "root_password_sha2 = {{ graylog_root_password_sha2 }}"
         - "http_bind_address = 0.0.0.0:9000"
-
-    - name: Ensure Graylog is enabled and started
-      systemd:
-        name: graylog-server
-        enabled: yes
-        state: started
-
-    # ----------- Kibana Installation ----------
+      notify:
+        - Start Graylog
+    
     - name: Install Kibana
       apt:
         name: kibana
         state: present
-        update_cache: yes
+      notify:
+        - Start Kibana
 
-    - name: Ensure Kibana is enabled and started
+  handlers:
+    - name: Start Rsyslog
+      systemd:
+        name: rsyslog
+        enabled: yes
+        state: started
+
+    - name: Start Fluentd
+      systemd:
+        name: td-agent
+        enabled: yes
+        state: started
+
+    - name: Start Elasticsearch
+      systemd:
+        name: elasticsearch
+        enabled: yes
+        state: started
+
+    - name: Start Graylog
+      systemd:
+        name: graylog-server
+        enabled: yes
+        state: started
+      when: "'elasticsearch' in (ansible_facts.services|default({})).keys() and (ansible_facts.services.elastic_search.state|default('inactive') == 'running')"
+      
+    - name: Start Kibana
       systemd:
         name: kibana
         enabled: yes
