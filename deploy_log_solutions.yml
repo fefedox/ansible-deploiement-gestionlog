@@ -1,5 +1,5 @@
 ---
-- name: Deploy a complete log management stack
+- name: Deploy a complete log management stack (central server)
   hosts: all
   become: yes
   vars:
@@ -25,7 +25,20 @@
         name: rsyslog
         state: present
       notify:
-        - Start Rsyslog
+        - Restart Rsyslog
+
+    - name: Configure Rsyslog to receive logs from other servers
+      lineinfile:
+        path: /etc/rsyslog.conf
+        state: present
+        line: "{{ item }}"
+      with_items:
+        - '$ModLoad imudp'
+        - '$UDPServerRun 514'
+        - '$ModLoad imtcp'
+        - '$InputTCPServerRun 514'
+      notify:
+        - Restart Rsyslog
 
     - name: Ensure Logrotate is installed
       apt:
@@ -37,7 +50,7 @@
         name: td-agent
         state: present
       notify:
-        - Start Fluentd
+        - Restart Fluentd
 
     - name: Install Elasticsearch GPG Key
       apt_key:
@@ -55,7 +68,7 @@
         name: elasticsearch
         state: present
       notify:
-        - Start Elasticsearch
+        - Restart Elasticsearch
 
     - name: Install Graylog repository
       apt_repository:
@@ -77,43 +90,66 @@
         - "root_password_sha2 = {{ graylog_root_password_sha2 }}"
         - "http_bind_address = 0.0.0.0:9000"
       notify:
-        - Start Graylog
+        - Restart Graylog
     
     - name: Install Kibana
       apt:
         name: kibana
         state: present
       notify:
-        - Start Kibana
+        - Restart Kibana
+
+    - name: Create Graylog UDP input
+      uri:
+        url: "http://localhost:9000/api/system/inputs"
+        method: POST
+        user: admin
+        password: "{{ graylog_password }}"
+        force_basic_auth: yes
+        body: |
+          {
+            "title": "Syslog UDP",
+            "global": true,
+            "type": "org.graylog2.inputs.syslog.udp.SyslogUDPInput",
+            "configuration": {
+              "allow_override_date": true,
+              "bind_address": "0.0.0.0",
+              "port": 514,
+              "recv_buffer_size": 262144,
+              "override_source": null
+            }
+          }
+        body_format: json
+        headers:
+          Content-Type: "application/json"
+        status_code: 201
+      register: output
+      until: output.status == 201
+      retries: 5
+      delay: 15
 
   handlers:
-    - name: Start Rsyslog
+    - name: Restart Rsyslog
       systemd:
         name: rsyslog
-        enabled: yes
-        state: started
+        state: restarted
 
-    - name: Start Fluentd
+    - name: Restart Fluentd
       systemd:
         name: td-agent
-        enabled: yes
-        state: started
+        state: restarted
 
-    - name: Start Elasticsearch
+    - name: Restart Elasticsearch
       systemd:
         name: elasticsearch
-        enabled: yes
-        state: started
+        state: restarted
 
-    - name: Start Graylog
+    - name: Restart Graylog
       systemd:
         name: graylog-server
-        enabled: yes
-        state: started
-      when: "'elasticsearch' in (ansible_facts.services|default({})).keys() and (ansible_facts.services.elastic_search.state|default('inactive') == 'running')"
-      
-    - name: Start Kibana
+        state: restarted
+
+    - name: Restart Kibana
       systemd:
         name: kibana
-        enabled: yes
-        state: started
+        state: restarted
