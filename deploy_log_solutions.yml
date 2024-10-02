@@ -81,15 +81,14 @@
       notify:
         - Restart Elasticsearch
 
-    - name: Install Graylog repository
-      apt_repository:
-        repo: "deb [trusted=yes] https://packages.graylog2.org/repo/packages/graylog/4.x/ubuntu/ stable main"
-        state: present
+    - name: Download Graylog repository package
+  get_url:
+    url: https://packages.graylog2.org/repo/packages/graylog-6.0-repository_latest.deb
+    dest: /tmp/graylog-6.0-repository_latest.deb
 
-    - name: Install Graylog
-      apt:
-        name: graylog-server
-        state: present
+- name: Install Graylog repository package
+  apt:
+    deb: /tmp/graylog-6.0-repository_latest.deb
 
     - name: Configure Graylog Server
       lineinfile:
