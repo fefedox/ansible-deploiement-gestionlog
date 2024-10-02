@@ -82,13 +82,13 @@
         - Restart Elasticsearch
 
     - name: Download Graylog repository package
-  get_url:
-    url: https://packages.graylog2.org/repo/packages/graylog-6.0-repository_latest.deb
-    dest: /tmp/graylog-6.0-repository_latest.deb
+      get_url:
+        url: https://packages.graylog2.org/repo/packages/graylog-6.0-repository_latest.deb
+        dest: /tmp/graylog-6.0-repository_latest.deb
 
-- name: Install Graylog repository package
-  apt:
-    deb: /tmp/graylog-6.0-repository_latest.deb
+    - name: Install Graylog repository package
+      apt:
+        deb: /tmp/graylog-6.0-repository_latest.deb
 
     - name: Configure Graylog Server
       lineinfile:
