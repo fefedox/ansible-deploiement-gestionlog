@@ -5,6 +5,7 @@
   vars:
     graylog_password_secret: "{{ lookup('password', '/dev/null length=96') }}"
     graylog_root_password_sha2: "{{ 'password' | password_hash('sha512') }}"
+    graylog_password: "123AZ!az"  # Remplace par le mot de passe que tu souhaites utiliser
     elasticsearch_version: "7.x"
     IP_DU_SERVEUR_CENTRAL: "{{ ansible_default_ipv4.address }}"
 
