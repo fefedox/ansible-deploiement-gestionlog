@@ -89,7 +89,19 @@
     - name: Install Graylog repository package
       apt:
         deb: /tmp/graylog-6.0-repository_latest.deb
+    
+    - name: Create Graylog configuration directory
+      file:
+        path: /etc/graylog/server
+        state: directory
+        mode: '0755'
 
+    - name: Create Graylog configuration file if it does not exist
+      copy:
+        content: ''
+        dest: /etc/graylog/server/server.conf
+        mode: '0644'
+    
     - name: Configure Graylog Server
       lineinfile:
         path: /etc/graylog/server/server.conf
