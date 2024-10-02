@@ -28,7 +28,7 @@
 
     - name: Add Fluentd repository
       apt_repository:
-        repo: "deb [trusted=yes] https://packages.treasuredata.com/3/ubuntu/focal/ focal contrib"
+        repo: "deb [trusted=yes] https://packages.treasuredata.com/3/ubuntu/bionic/ bionic contrib"
         state: present
 
     - name: Ensure Rsyslog is installed and started
