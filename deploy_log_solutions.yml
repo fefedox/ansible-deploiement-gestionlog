@@ -191,3 +191,8 @@
       systemd:
         name: kibana
         state: restarted
+
+    - name: Redémarrer Graylog
+      systemd:
+        name: graylog-server
+        state: restarted
