@@ -123,13 +123,13 @@
         - Restart Kibana
 
     - name: Wait for Graylog to be ready
-  wait_for:
-    host: "{{ IP_DU_SERVEUR_CENTRAL }}"
-    port: 9000
-    timeout: 300
-
+        wait_for:
+          host: "{{ IP_DU_SERVEUR_CENTRAL }}"
+          port: 9000
+          timeout: 300
+          
     - name: Create Graylog UDP input
-      uri:
+        uri:
         url: "http://{{ IP_DU_SERVEUR_CENTRAL }}:9000/api/system/inputs"
         method: POST
         user: admin
