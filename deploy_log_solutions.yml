@@ -82,28 +82,37 @@
       notify:
         - Restart Elasticsearch
 
-    - name: Download Graylog repository package
+    - name: Télécharger le paquet du dépôt Graylog
       get_url:
         url: https://packages.graylog2.org/repo/packages/graylog-6.0-repository_latest.deb
         dest: /tmp/graylog-6.0-repository_latest.deb
 
-    - name: Install Graylog repository package
+    - name: Installer le paquet du dépôt Graylog
       apt:
         deb: /tmp/graylog-6.0-repository_latest.deb
-    
-    - name: Create Graylog configuration directory
+
+    - name: Mettre à jour le cache apt
+      apt:
+        update_cache: yes
+
+    - name: Installer le serveur Graylog
+      apt:
+        name: graylog-server
+        state: present
+
+    - name: Créer le répertoire de configuration de Graylog
       file:
         path: /etc/graylog/server
         state: directory
         mode: '0755'
 
-    - name: Create Graylog configuration file if it does not exist
+    - name: Créer le fichier de configuration de Graylog s'il n'existe pas
       copy:
         content: ''
         dest: /etc/graylog/server/server.conf
         mode: '0644'
-    
-    - name: Configure Graylog Server
+
+    - name: Configurer le serveur Graylog
       lineinfile:
         path: /etc/graylog/server/server.conf
         state: present
@@ -113,8 +122,8 @@
         - "root_password_sha2 = {{ graylog_root_password_sha2 }}"
         - "http_bind_address = {{ IP_DU_SERVEUR_CENTRAL }}:9000"
       notify:
-        - Restart Graylog
-
+        - Redémarrer Graylog
+        
     - name: Install Kibana
       apt:
         name: kibana
