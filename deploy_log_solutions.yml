@@ -3,9 +3,6 @@
   hosts: localhost
   become: yes
   vars:
-    graylog_password_secret: "{{ lookup('password', '/dev/null length=96') }}"
-    graylog_root_password_sha2: "{{ 'password' | password_hash('sha512') }}"
-    graylog_password: "123AZ!az"  # Remplace par le mot de passe que tu souhaites utiliser
     elasticsearch_version: "7.x"
     IP_DU_SERVEUR_CENTRAL: "{{ ansible_default_ipv4.address }}"
 
@@ -82,79 +79,12 @@
       notify:
         - Restart Elasticsearch
 
-    - name: Télécharger le paquet du dépôt Graylog
-      get_url:
-        url: https://packages.graylog2.org/repo/packages/graylog-6.0-repository_latest.deb
-        dest: /tmp/graylog-6.0-repository_latest.deb
-
-    - name: Installer le paquet du dépôt Graylog
-      apt:
-        deb: /tmp/graylog-6.0-repository_latest.deb
-
-    - name: Installer le serveur Graylog
-      apt:
-        name: graylog-server
-        state: present
-
-    - name: Créer le répertoire de configuration de Graylog
-      file:
-        path: /etc/graylog/server
-        state: directory
-        mode: '0755'
-
-    - name: Créer le fichier de configuration de Graylog s'il n'existe pas
-      copy:
-        content: ''
-        dest: /etc/graylog/server/server.conf
-        mode: '0644'
-
-    - name: Configurer le serveur Graylog
-      lineinfile:
-        path: /etc/graylog/server/server.conf
-        state: present
-        line: "{{ item }}"
-      with_items:
-        - "password_secret = {{ graylog_password_secret }}"
-        - "root_password_sha2 = {{ graylog_root_password_sha2 }}"
-        - "http_bind_address = {{ IP_DU_SERVEUR_CENTRAL }}:9000"
-      notify:
-        - Restart Graylog
-
     - name: Install Kibana
       apt:
         name: kibana
         state: present
       notify:
         - Restart Kibana
-         
-    - name: Create Graylog UDP input
-      uri:
-        url: "http://{{ IP_DU_SERVEUR_CENTRAL }}:9000/api/system/inputs"
-        method: POST
-        user: admin
-        password: "{{ graylog_password }}"
-        force_basic_auth: yes
-        body: |
-          {
-            "title": "Syslog UDP",
-            "global": true,
-            "type": "org.graylog2.inputs.syslog.udp.SyslogUDPInput",
-            "configuration": {
-              "allow_override_date": true,
-              "bind_address": "0.0.0.0",
-              "port": 514,
-              "recv_buffer_size": 262144,
-              "override_source": null
-            }
-          }
-        body_format: json
-        headers:
-          Content-Type: "application/json"
-        status_code: 201
-      register: output
-      until: output.status == 201
-      retries: 5
-      delay: 15
 
   handlers:
     - name: Restart Rsyslog
@@ -170,11 +100,6 @@
     - name: Restart Elasticsearch
       systemd:
         name: elasticsearch
-        state: restarted
-
-    - name: Restart Graylog
-      systemd:
-        name: graylog-server
         state: restarted
 
     - name: Restart Kibana
